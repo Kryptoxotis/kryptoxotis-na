@@ -1,0 +1,141 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 0%;
+    --foreground: 0 0% 100%;
+
+    --card: 0 0% 4%;
+    --card-foreground: 0 0% 100%;
+
+    --popover: 0 0% 4%;
+    --popover-foreground: 0 0% 100%;
+
+    --primary: 158 45% 20%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 0 100% 50%;
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 0 0% 15%;
+    --muted-foreground: 0 0% 70%;
+
+    --accent: 158 45% 20%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 100% 50%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 0 0% 20%;
+    --input: 0 0% 20%;
+    --ring: 158 45% 20%;
+  }
+}
+
+@layer base {
+  body {
+    @apply bg-gradient-to-b from-black to-zinc-900;
+    font-family: "Sans Forgetica", sans-serif;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: "Playfair Display", serif;
+  }
+
+  p,
+  span,
+  div,
+  a,
+  button,
+  input,
+  textarea,
+  select,
+  li {
+    font-family: "Sans Forgetica", sans-serif;
+  }
+
+  p {
+    @apply text-white;
+  }
+}
+
+@layer components {
+  /* Metallic text gradients */
+  .metallic-text {
+    @apply font-bold text-transparent bg-clip-text bg-gradient-to-r from-emerald-500 via-emerald-300 to-emerald-400;
+    text-shadow: 0 0 5px rgba(27, 77, 62, 0.3);
+    font-family: "Playfair Display", serif;
+  }
+
+  .metallic-red-text {
+    @apply font-bold text-transparent bg-clip-text bg-gradient-to-r from-red-900 via-red-500 to-red-800;
+    text-shadow: 0 0 5px rgba(255, 0, 0, 0.3);
+  }
+
+  .metallic-silver-text {
+    @apply font-medium text-transparent bg-clip-text bg-gradient-to-r from-zinc-400 via-zinc-200 to-zinc-400;
+    text-shadow: 0 0 3px rgba(255, 255, 255, 0.2);
+  }
+
+  .metallic-emerald {
+    @apply bg-gradient-to-r from-emerald-500 via-emerald-300 to-emerald-400;
+    box-shadow: 0 0 10px rgba(27, 77, 62, 0.5);
+  }
+
+  .metallic-red {
+    @apply bg-gradient-to-r from-red-500 via-red-400 to-red-600;
+    box-shadow: 0 0 10px rgba(255, 0, 0, 0.5);
+  }
+
+  .metallic-silver {
+    @apply bg-gradient-to-r from-zinc-300 via-zinc-100 to-zinc-300;
+  }
+
+  .cyber-border {
+    @apply border border-emerald-500 relative;
+    box-shadow: 0 0 5px rgba(27, 77, 62, 0.5);
+  }
+
+  .cyber-border::before {
+    content: "";
+    @apply absolute -top-1 -left-1 w-3 h-3 border-t border-l border-emerald-500;
+  }
+
+  .cyber-border::after {
+    content: "";
+    @apply absolute -bottom-1 -right-1 w-3 h-3 border-b border-r border-emerald-500;
+  }
+
+  .circuit-bg {
+    background-image: radial-gradient(circle at 25px 25px, rgba(27, 77, 62, 0.1) 2px, transparent 0),
+      linear-gradient(to right, rgba(27, 77, 62, 0.05) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(27, 77, 62, 0.05) 1px, transparent 1px);
+    background-size: 50px 50px;
+  }
+
+  /* Font classes */
+  .font-serif {
+    font-family: "Playfair Display", serif;
+  }
+
+  .font-sans-forgetica {
+    font-family: "Sans Forgetica", sans-serif;
+  }
+}
+
+@layer utilities {
+  .glow-emerald {
+    filter: drop-shadow(0 0 5px rgba(27, 77, 62, 0.5));
+  }
+
+  .glow-red {
+    filter: drop-shadow(0 0 5px rgba(255, 0, 0, 0.5));
+  }
+}
