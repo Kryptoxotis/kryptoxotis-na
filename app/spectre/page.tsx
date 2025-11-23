@@ -1,9 +1,9 @@
 "use client"
 
-import type React from "react"
-import { useEffect, useState } from "react"
-import { Shield, Eye, Loader2, Wifi } from 'lucide-react'
+import React, { useEffect, useState } from "react"
+import { Shield, Eye, Loader2, Wifi } from "lucide-react"
 import { CyberButton } from "@/components/ui/cyber-button"
+import FloatingOrb from "@/components/visual/FloatingOrb"
 
 export default function SpectrePage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
@@ -13,25 +13,20 @@ export default function SpectrePage() {
   const [agentLoaded, setAgentLoaded] = useState(false)
   const [clientIP, setClientIP] = useState<string>("")
 
-  // Simple access control - you can change this code
   const SPECTRE_ACCESS_CODE = "KRYPTO2025"
 
-  // Get client IP for testing
   useEffect(() => {
     const getClientIP = async () => {
       try {
-        // Try to get IP from a public service
         const response = await fetch("https://api.ipify.org?format=json")
         const data = await response.json()
         setClientIP(data.ip)
-      } catch (error) {
-        console.log("Could not fetch IP from external service")
-        // Fallback: try to get IP from our auth endpoint
+      } catch {
         try {
           const authResponse = await fetch("/api/spectre/auth")
           const authData = await authResponse.json()
           setClientIP(authData.ip || "Unknown")
-        } catch (authError) {
+        } catch {
           setClientIP("Unable to determine")
         }
       }
@@ -40,7 +35,6 @@ export default function SpectrePage() {
     getClientIP()
   }, [])
 
-  // Check IP whitelist on component mount
   useEffect(() => {
     const checkIPAccess = async () => {
       try {
@@ -50,7 +44,7 @@ export default function SpectrePage() {
         if (data.authorized) {
           setIsAuthenticated(true)
         }
-      } catch (error) {
+      } catch {
         console.log("IP check failed, requiring manual authentication")
       } finally {
         setIsCheckingIP(false)
@@ -72,7 +66,6 @@ export default function SpectrePage() {
   }
 
   useEffect(() => {
-    // Load the ElevenLabs script only after authentication
     if (isAuthenticated) {
       const script = document.createElement("script")
       script.src = "https://unpkg.com/@elevenlabs/convai-widget-embed"
@@ -81,11 +74,11 @@ export default function SpectrePage() {
 
       script.onload = () => {
         setAgentLoaded(true)
-        // Apply styling
+
+        // Style the widget
         setTimeout(() => {
           const style = document.createElement("style")
           style.textContent = `
-            /* Style the widget when it does render */
             elevenlabs-convai iframe,
             elevenlabs-convai > div,
             elevenlabs-convai > div > div {
@@ -95,8 +88,7 @@ export default function SpectrePage() {
               backdrop-filter: blur(20px) !important;
               box-shadow: 0 0 40px rgba(16, 185, 129, 0.3) !important;
             }
-            
-            /* Style buttons */
+
             elevenlabs-convai button {
               background: linear-gradient(135deg, #10b981, #059669) !important;
               border: 1px solid rgba(16, 185, 129, 0.6) !important;
@@ -106,7 +98,7 @@ export default function SpectrePage() {
               padding: 12px 24px !important;
               font-weight: 600 !important;
             }
-            
+
             elevenlabs-convai button:hover {
               background: linear-gradient(135deg, #059669, #047857) !important;
               box-shadow: 0 0 25px rgba(16, 185, 129, 0.5) !important;
@@ -115,12 +107,22 @@ export default function SpectrePage() {
           `
           document.head.appendChild(style)
         }, 1000)
+
+        // Auto-listen + autoplay
+        setTimeout(() => {
+          const convai = document.querySelector("elevenlabs-convai")
+          if (convai) {
+            convai.setAttribute("autoplay", "true")
+            convai.setAttribute("auto-listen", "true")
+            // Fallback force click
+            convai?.shadowRoot?.querySelector("button[data-action='listen']")?.click()
+          }
+        }, 2000)
       }
 
       document.head.appendChild(script)
 
       return () => {
-        // Cleanup script on unmount
         if (document.head.contains(script)) {
           document.head.removeChild(script)
         }
@@ -128,7 +130,6 @@ export default function SpectrePage() {
     }
   }, [isAuthenticated])
 
-  // Show loading while checking IP
   if (isCheckingIP) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center p-4">
@@ -150,7 +151,7 @@ export default function SpectrePage() {
           <div className="cyber-border bg-zinc-900/80 backdrop-blur-sm rounded-lg p-8 shadow-2xl">
             <div className="text-center mb-8">
               <div className="inline-flex items-center justify-center w-20 h-20 bg-emerald-500/10 rounded-full mb-6 cyber-border">
-                <Shield className="w-10 h-10 text-emerald-400" />
+                <<Shield className="w-10 h-10 text-emerald-400" />
               </div>
               <h1 className="metallic-text text-3xl font-bold mb-3">SPECTRE</h1>
               <p className="metallic-silver-text text-lg">AI Agent Interface</p>
@@ -187,7 +188,7 @@ export default function SpectrePage() {
 
   return (
     <div className="min-h-screen bg-black">
-      {/* Minimalistic Header */}
+      {/* Header */}
       <div className="bg-black/90 backdrop-blur-sm border-b border-emerald-500/20 sticky top-0 z-50">
         <div className="max-w-4xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
@@ -215,70 +216,45 @@ export default function SpectrePage() {
         </div>
       </div>
 
-      {/* Main Content - Centered and Minimalistic */}
+      {/* Main Content */}
       <div className="flex-1 flex items-center justify-center p-4 sm:p-8 min-h-[calc(100vh-80px)]">
-        <div className="w-full max-w-4xl">
-          {/* AI Agent Interface - Centered */}
-          <div className="relative">
-            <div className="bg-zinc-900/20 backdrop-blur-sm rounded-2xl border border-emerald-500/20 overflow-hidden">
-              <div className="p-4 sm:p-6 border-b border-emerald-500/10">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h2 className="metallic-text text-lg sm:text-xl font-semibold">Neural Interface</h2>
-                    <p className="metallic-silver-text text-sm">Direct communication channel</p>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    {agentLoaded ? (
-                      <>
-                        <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
-                        <span className="text-emerald-400 text-sm font-medium hidden sm:inline">Agent Ready</span>
-                      </>
-                    ) : (
-                      <>
-                        <Loader2 className="w-4 h-4 text-yellow-400 animate-spin" />
-                        <span className="text-yellow-400 text-sm font-medium hidden sm:inline">Loading...</span>
-                      </>
-                    )}
-                  </div>
-                </div>
+        <div className="w-full max-w-4xl relative">
+          {/* Agent UI */}
+          <div className="relative bg-zinc-900/20 backdrop-blur-sm rounded-2xl border border-emerald-500/20 overflow-hidden">
+            <div className="p-4 sm:p-6 border-b border-emerald-500/10 flex justify-between items-center">
+              <div>
+                <h2 className="metallic-text text-lg font-semibold">Neural Interface</h2>
+                <p className="metallic-silver-text text-sm">Direct communication channel</p>
+              </div>
+              <div className="flex items-center space-x-2">
+                {agentLoaded ? (
+                  <>
+                    <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
+                    <span className="text-emerald-400 text-sm font-medium">Agent Ready</span>
+                  </>
+                ) : (
+                  <>
+                    <Loader2 className="w-4 h-4 text-yellow-400 animate-spin" />
+                    <span className="text-yellow-400 text-sm font-medium">Loading...</span>
+                  </>
+                )}
+              </div>
+            </div>
+
+            <div className="relative p-4 sm:p-8 min-h-[400px] sm:min-h-[500px] flex items-center justify-center bg-gradient-to-br from-black/40 to-zinc-900/40 rounded-xl border border-emerald-500/20 backdrop-blur-sm overflow-hidden">
+              {/* Orb */}
+              <div className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none">
+                <FloatingOrb />
               </div>
 
-              <div className="p-4 sm:p-8">
-                <div className="relative">
-                  {/* Loading State */}
-                  {!agentLoaded && (
-                    <div className="absolute inset-0 flex items-center justify-center z-10 bg-black/50 rounded-xl">
-                      <div className="text-center">
-                        <div className="inline-flex items-center justify-center w-16 h-16 bg-emerald-500/10 rounded-full mb-4 cyber-border">
-                          <Loader2 className="w-8 h-8 text-emerald-400 animate-spin" />
-                        </div>
-                        <h3 className="metallic-text text-lg font-semibold mb-2">Initializing AI Agent</h3>
-                        <p className="metallic-silver-text text-sm">Establishing neural connection...</p>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* AI Agent Widget Container */}
-                  <div
-                    id="spectre-agent-container"
-                    className="min-h-[400px] sm:min-h-[500px] flex items-center justify-center bg-gradient-to-br from-black/40 to-zinc-900/40 rounded-xl border border-emerald-500/20 backdrop-blur-sm relative overflow-hidden"
-                  >
-                    {/* Background Pattern */}
-                    <div className="absolute inset-0 opacity-5">
-                      <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/10 to-transparent"></div>
-                    </div>
-
-                    {/* AI Agent Widget */}
-                    <div className="w-full h-full flex items-center justify-center relative z-20">
-                      <elevenlabs-convai agent-id="agent_01jz9r2kajer9t5a9jz36p237s"></elevenlabs-convai>
-                    </div>
-                  </div>
-                </div>
+              {/* Widget */}
+              <div className="z-20 w-full h-full flex items-center justify-center">
+                <elevenlabs-convai agent-id="agent_01jytjymf2fwy9g4bmzv9hqex5"></elevenlabs-convai>
               </div>
             </div>
           </div>
 
-          {/* Mobile IP Display */}
+          {/* IP display mobile */}
           <div className="sm:hidden mt-4 text-center">
             <div className="inline-flex items-center space-x-2 text-xs bg-zinc-900/50 px-3 py-2 rounded-lg border border-emerald-500/20">
               <Wifi className="w-3 h-3 text-emerald-400" />
