@@ -2,50 +2,47 @@ import { type NextRequest, NextResponse } from "next/server"
 
 export async function GET(request: NextRequest) {
   try {
-    // Get client IP from various possible headers
+    // Get the client IP address with better detection
     const forwarded = request.headers.get("x-forwarded-for")
     const realIP = request.headers.get("x-real-ip")
     const cfConnectingIP = request.headers.get("cf-connecting-ip")
+    const xClientIP = request.headers.get("x-client-ip")
 
-    let clientIP = forwarded?.split(",")[0]?.trim() || realIP || cfConnectingIP || request.ip || "unknown"
+    // Try multiple headers to get the real IP
+    let clientIP = "unknown"
 
-    // Clean up the IP (remove any brackets or extra formatting)
-    clientIP = clientIP.replace(/^\[|\]$/g, "").trim()
+    if (cfConnectingIP) {
+      clientIP = cfConnectingIP.trim()
+    } else if (forwarded) {
+      clientIP = forwarded.split(",")[0].trim()
+    } else if (realIP) {
+      clientIP = realIP.trim()
+    } else if (xClientIP) {
+      clientIP = xClientIP.trim()
+    }
 
-    // Get allowed IPs from environment variable
-    const allowedIPsEnv = process.env.ALLOWED_IPS || ""
-
-    // Parse allowed IPs - handle quotes and clean up
-    const allowedIPs = allowedIPsEnv
+    // Get allowed IPs from environment variable and clean them
+    const allowedIPsRaw = process.env.ALLOWED_IPS || ""
+    const allowedIPs = allowedIPsRaw
       .split(",")
-      .map((ip) => ip.trim().replace(/^["']|["']$/g, ""))
+      .map((ip) => ip.trim())
+      .map((ip) => ip.replace(/^["']|["']$/g, "")) // Remove surrounding quotes
       .filter((ip) => ip.length > 0)
 
-    // Check if client IP is in allowed list
-    const authorized = allowedIPs.includes(clientIP)
-
-    console.log("IP Authorization Check:", {
-      clientIP,
-      allowedIPs,
-      authorized,
-      headers: {
-        "x-forwarded-for": forwarded,
-        "x-real-ip": realIP,
-        "cf-connecting-ip": cfConnectingIP,
-      },
-    })
+    // Check if the client IP is in the allowed list
+    const isAuthorized = allowedIPs.includes(clientIP)
 
     return NextResponse.json({
-      authorized,
+      authorized: isAuthorized,
       ip: clientIP,
+      message: isAuthorized ? "Access granted" : "Manual authentication required",
     })
   } catch (error) {
-    console.error("Auth check error:", error)
+    console.error("Error checking IP authorization:", error)
     return NextResponse.json(
       {
         authorized: false,
-        ip: "error",
-        error: "Failed to check authorization",
+        message: "Authorization check failed",
       },
       { status: 500 },
     )
