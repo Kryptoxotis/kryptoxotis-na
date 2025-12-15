@@ -58,9 +58,11 @@ export async function POST(request: Request) {
 
   // Check if we are in a development environment or if API keys are missing
   if (!process.env.NOTION_API_KEY || !process.env.NOTION_CONTACT_DATABASE_ID) {
+    console.warn('[DEV MODE] Contact form submission not saved to Notion:', data.email)
     return NextResponse.json({
       success: true,
       message: "Thank you for your message. We will get back to you soon! (Development mode)",
+      dev: true
     })
   }
 

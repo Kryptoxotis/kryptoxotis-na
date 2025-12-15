@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server"
+import crypto from "crypto"
 import { checkRateLimit, getClientIP, getRateLimitHeaders } from "@/lib/rate-limit"
 
 export async function POST(request: Request) {
@@ -38,7 +39,11 @@ export async function POST(request: Request) {
       }, { status: 500 })
     }
 
-    if (code !== validCode) {
+    // Use constant-time comparison to prevent timing attacks
+    const isValid = validCode && code.length === validCode.length &&
+      crypto.timingSafeEqual(Buffer.from(code), Buffer.from(validCode))
+
+    if (!isValid) {
       return NextResponse.json({
         authorized: false,
         message: "Invalid access code",

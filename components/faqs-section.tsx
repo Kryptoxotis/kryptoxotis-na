@@ -4,9 +4,10 @@ import { useState, useEffect } from "react"
 import { FAQItem } from "@/components/ui/faq-item"
 import { SectionTitle } from "@/components/ui/section-title"
 import { LoadingSpinner } from "@/components/ui/loading-spinner"
+import type { FAQ } from "@/lib/notion"
 
 export function FAQsSection() {
-  const [faqs, setFaqs] = useState<any[]>([])
+  const [faqs, setFaqs] = useState<FAQ[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 

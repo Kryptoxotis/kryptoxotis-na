@@ -17,7 +17,6 @@ const playfair = Playfair_Display({
 export const metadata = {
   title: "Kryptoxotis - Futuristic Business Solutions",
   description: "Business Database Management, Web Design, and 3D Printing Services",
-    generator: 'v0.app'
 }
 
 // Force dynamic rendering and disable caching

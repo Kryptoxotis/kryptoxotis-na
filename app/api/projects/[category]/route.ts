@@ -33,6 +33,7 @@ export async function GET(request: Request, { params }: { params: { category: st
 
   // If no category is specified, return an empty array
   if (!category) {
+    return NextResponse.json([])
   }
 
   // Determine which database ID to use
@@ -49,10 +50,12 @@ export async function GET(request: Request, { params }: { params: { category: st
       break
     default:
       // If category doesn't match any known category, return an empty array
+      return NextResponse.json([])
   }
 
   // Check if we're in a development environment or if API keys are missing
   if (!process.env.NOTION_API_KEY || !databaseId) {
+    return NextResponse.json([])
   }
 
   try {

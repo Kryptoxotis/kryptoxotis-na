@@ -2,37 +2,15 @@
 
 import type React from "react"
 import { useEffect, useState } from "react"
-import { Shield, Eye, Loader2, Wifi } from 'lucide-react'
+import { Shield, Eye, Loader2 } from 'lucide-react'
 import { CyberButton } from "@/components/ui/cyber-button"
 
 export default function SpectrePage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [accessCode, setAccessCode] = useState("")
   const [error, setError] = useState("")
-  const [isCheckingIP, setIsCheckingIP] = useState(true)
   const [agentLoaded, setAgentLoaded] = useState(false)
-  const [clientIP, setClientIP] = useState<string>("")
   const [isValidating, setIsValidating] = useState(false)
-
-  // Check IP whitelist on component mount
-  useEffect(() => {
-    const checkIPAccess = async () => {
-      try {
-        const response = await fetch("/api/spectre/auth")
-        const data = await response.json()
-
-        if (data.authorized) {
-          setIsAuthenticated(true)
-        }
-        setClientIP(data.ip || "Unknown")
-      } catch (error) {
-      } finally {
-        setIsCheckingIP(false)
-      }
-    }
-
-    checkIPAccess()
-  }, [])
 
   const handleAccess = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -59,6 +37,7 @@ export default function SpectrePage() {
       setIsValidating(false)
     }
   }
+
   useEffect(() => {
     // Load the ElevenLabs script only after authentication
     if (isAuthenticated) {
@@ -66,6 +45,11 @@ export default function SpectrePage() {
       script.src = "https://unpkg.com/@elevenlabs/convai-widget-embed"
       script.async = true
       script.type = "text/javascript"
+
+      script.onerror = () => {
+        console.error('Failed to load ElevenLabs script')
+        setAgentLoaded(false)
+      }
 
       script.onload = () => {
         setAgentLoaded(true)
@@ -83,7 +67,7 @@ export default function SpectrePage() {
               backdrop-filter: blur(20px) !important;
               box-shadow: 0 0 40px rgba(16, 185, 129, 0.3) !important;
             }
-            
+
             /* Style buttons */
             elevenlabs-convai button {
               background: linear-gradient(135deg, #10b981, #059669) !important;
@@ -94,7 +78,7 @@ export default function SpectrePage() {
               padding: 12px 24px !important;
               font-weight: 600 !important;
             }
-            
+
             elevenlabs-convai button:hover {
               background: linear-gradient(135deg, #059669, #047857) !important;
               box-shadow: 0 0 25px rgba(16, 185, 129, 0.5) !important;
@@ -115,21 +99,6 @@ export default function SpectrePage() {
       }
     }
   }, [isAuthenticated])
-
-  // Show loading while checking IP
-  if (isCheckingIP) {
-    return (
-      <div className="min-h-screen bg-black flex items-center justify-center p-4">
-        <div className="text-center">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-emerald-500/10 rounded-full mb-4 cyber-border">
-            <Loader2 className="w-8 h-8 text-emerald-400 animate-spin" />
-          </div>
-          <h2 className="metallic-text text-xl font-semibold mb-2">Initializing Spectre</h2>
-          <p className="metallic-silver-text">Verifying access credentials...</p>
-        </div>
-      </div>
-    )
-  }
 
   if (!isAuthenticated) {
     return (
@@ -188,16 +157,9 @@ export default function SpectrePage() {
                 <p className="metallic-silver-text text-xs">Neural Interface</p>
               </div>
             </div>
-            <div className="flex items-center space-x-4">
-              <div className="hidden sm:flex items-center space-x-2 text-xs">
-                <Wifi className="w-3 h-3 text-emerald-400" />
-                <span className="text-zinc-400">IP:</span>
-                <span className="text-emerald-400 font-mono">{clientIP}</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
-                <span className="text-emerald-400 text-sm font-medium">ONLINE</span>
-              </div>
+            <div className="flex items-center space-x-2">
+              <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
+              <span className="text-emerald-400 text-sm font-medium">ONLINE</span>
             </div>
           </div>
         </div>
@@ -263,15 +225,6 @@ export default function SpectrePage() {
                   </div>
                 </div>
               </div>
-            </div>
-          </div>
-
-          {/* Mobile IP Display */}
-          <div className="sm:hidden mt-4 text-center">
-            <div className="inline-flex items-center space-x-2 text-xs bg-zinc-900/50 px-3 py-2 rounded-lg border border-emerald-500/20">
-              <Wifi className="w-3 h-3 text-emerald-400" />
-              <span className="text-zinc-400">IP:</span>
-              <span className="text-emerald-400 font-mono">{clientIP}</span>
             </div>
           </div>
         </div>

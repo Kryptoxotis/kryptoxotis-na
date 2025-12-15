@@ -88,5 +88,5 @@ export async function GET(request: Request) {
     console.error("API: Error fetching testimonials:", error)
 
     return new NextResponse(JSON.stringify([]), { headers: { "Content-Type": "application/json", ...NO_CACHE_HEADERS }, status: 500 })
-}
   }
+}

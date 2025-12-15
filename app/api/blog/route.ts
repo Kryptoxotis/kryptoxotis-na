@@ -88,8 +88,11 @@ function richTextToHtml(richText: NotionRichText[]): string {
       if (text.annotations?.underline) content = `<u>${content}</u>`
       if (text.annotations?.code) content = `<code>${content}</code>`
 
-      // Handle links
-      if (text.href) content = `<a href="${text.href}" target="_blank" rel="noopener noreferrer">${content}</a>`
+      // Handle links - sanitize href to prevent XSS
+      if (text.href) {
+        const sanitizedHref = sanitizeHtml(text.href, { allowedTags: [], allowedAttributes: {} })
+        content = `<a href="${sanitizedHref}" target="_blank" rel="noopener noreferrer">${content}</a>`
+      }
 
       return content
     })

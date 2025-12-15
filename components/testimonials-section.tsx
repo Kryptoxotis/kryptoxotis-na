@@ -4,9 +4,10 @@ import { useState, useEffect } from "react"
 import { TestimonialCard } from "@/components/ui/testimonial-card"
 import { SectionTitle } from "@/components/ui/section-title"
 import { LoadingSpinner } from "@/components/ui/loading-spinner"
+import type { Testimonial } from "@/lib/notion"
 
 export function TestimonialsSection() {
-  const [testimonials, setTestimonials] = useState<any[]>([])
+  const [testimonials, setTestimonials] = useState<Testimonial[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 

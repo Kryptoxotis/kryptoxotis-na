@@ -131,7 +131,7 @@ export function WebPortfolioSection({ title = "Our Web Design Portfolio" }) {
                         className="w-full h-full border-0"
                         title={projects.find((p) => p.id === activeTab)?.title}
                         loading="lazy"
-                        sandbox="allow-scripts allow-same-origin"
+                        sandbox="allow-scripts allow-same-origin allow-popups allow-forms"
                       ></iframe>
                     </div>
 
