@@ -1,40 +1,18 @@
 import { NextResponse } from "next/server"
+import type { NotionRichText, NotionFile, NotionPageGeneric } from "@/types/notion"
+import { NO_CACHE_HEADERS } from "@/lib/constants"
 
 export const runtime = "nodejs" // Force Node.js runtime
 
-// Mock data for testimonials
-const mockTestimonials = [
-  {
-    id: "1",
-    quote:
-      "Kryptoxotis transformed our outdated database system into a streamlined, automated powerhouse. Our efficiency has increased by 40%!",
-    author: "Sarah Johnson",
-    role: "Operations Director, TechCorp",
-  },
-  {
-    id: "2",
-    quote:
-      "The web design team at Kryptoxotis created a stunning website that perfectly captures our brand. The attention to detail is remarkable.",
-    author: "Michael Chen",
-    role: "Marketing Manager, Innovate Inc.",
-  },
-  {
-    id: "3",
-    quote:
-      "Their 3D printing service helped us rapidly prototype our product, saving us months of development time. The quality exceeded our expectations.",
-    author: "Jessica Rodriguez",
-    role: "Product Developer, NextGen Solutions",
-  },
-]
 
 // Helper function to safely extract rich text from Notion
-function extractRichText(richText: any[] | undefined): string {
+function extractRichText(richText: NotionRichText[] | undefined): string {
   if (!richText || !Array.isArray(richText) || richText.length === 0) return ""
   return richText.map((text) => text?.plain_text || "").join("")
 }
 
 // Helper function to safely get the first URL from a files array
-function extractFileUrl(files: any[] | undefined): string {
+function extractFileUrl(files: NotionFile[] | undefined): string {
   if (!files || !Array.isArray(files) || files.length === 0) return "/placeholder.svg?height=400&width=600"
 
   const file = files[0]
@@ -50,17 +28,13 @@ function extractFileUrl(files: any[] | undefined): string {
 }
 
 export async function GET(request: Request) {
-  console.log("API: Starting getTestimonials function in environment:", process.env.NODE_ENV)
-  console.log("API: Request headers:", Object.fromEntries(request.headers.entries()))
 
   // Check if we're in a development environment or if API keys are missing
   if (!process.env.NOTION_API_KEY || !process.env.NOTION_TESTIMONIALS_DATABASE_ID) {
-    console.log("API: Using mock testimonials data due to missing environment variables")
-    return NextResponse.json(mockTestimonials)
+    return NextResponse.json([])
   }
 
   try {
-    console.log("API: Querying Notion testimonials database")
 
     // Use fetch directly to query the Notion API
     const response = await fetch(
@@ -83,10 +57,9 @@ export async function GET(request: Request) {
     }
 
     const data = await response.json()
-    console.log(`API: Received ${data.results.length} testimonials from Notion`)
 
     // Process the results
-    const testimonials = data.results.map((page: any) => {
+    const testimonials = data.results.map((page: NotionPageGeneric) => {
       const properties = page.properties || {}
 
       // Extract the testimonial data
@@ -108,42 +81,12 @@ export async function GET(request: Request) {
     return new NextResponse(JSON.stringify(testimonials), {
       headers: {
         "Content-Type": "application/json",
-        "Cache-Control": "no-cache, no-store, must-revalidate",
-        Pragma: "no-cache",
-        Expires: "0",
+        ...NO_CACHE_HEADERS,
       },
     })
   } catch (error) {
     console.error("API: Error fetching testimonials:", error)
 
-    // In production, return mock data with error info
-    if (process.env.NODE_ENV === "production") {
-      return new NextResponse(
-        JSON.stringify({
-          items: mockTestimonials,
-          error: {
-            message: error instanceof Error ? error.message : "Unknown error",
-            type: "fetch_error",
-          },
-        }),
-        {
-          headers: {
-            "Content-Type": "application/json",
-            "Cache-Control": "no-cache, no-store, must-revalidate",
-            Pragma: "no-cache",
-            Expires: "0",
-          },
-        },
-      )
-    }
-
-    return new NextResponse(JSON.stringify(mockTestimonials), {
-      headers: {
-        "Content-Type": "application/json",
-        "Cache-Control": "no-cache, no-store, must-revalidate",
-        Pragma: "no-cache",
-        Expires: "0",
-      },
-    })
-  }
+    return new NextResponse(JSON.stringify([]), { headers: { "Content-Type": "application/json", ...NO_CACHE_HEADERS }, status: 500 })
 }
+  }

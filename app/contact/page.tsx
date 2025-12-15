@@ -35,7 +35,6 @@ export default function ContactPage() {
   }>({})
 
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [showChat, setShowChat] = useState(false)
   const [messageLength, setMessageLength] = useState(0)
 
   // Form validation state
@@ -230,51 +229,6 @@ export default function ContactPage() {
                 </div>
               </div>
 
-              {/* Secondary CTA for hesitant users */}
-              <div className="mt-8 p-4 bg-zinc-900/70 rounded-sm cyber-border">
-                <div className="flex items-center mb-2">
-                  <Clock className="h-5 w-5 text-emerald-500 mr-2" />
-                  <h3 className="text-white font-medium">Not ready to book yet?</h3>
-                </div>
-                <p className="text-white mb-4">
-                  Have a quick question or need more information before scheduling a consultation?
-                </p>
-                <button
-                  onClick={() => setShowChat(!showChat)}
-                  className="flex items-center text-emerald-400 hover:text-emerald-300 transition-colors duration-300"
-                >
-                  <MessageSquare className="h-4 w-4 mr-2" />
-                  <span>{showChat ? "Hide quick question form" : "Send us a quick question"}</span>
-                </button>
-
-                {showChat && (
-                  <div className="mt-4 p-4 bg-zinc-800 rounded-sm">
-                    <div className="mb-4">
-                      <label htmlFor="quick-email" className="block text-white font-medium mb-1 text-sm">
-                        Your Email
-                      </label>
-                      <input
-                        type="email"
-                        id="quick-email"
-                        className="w-full px-3 py-2 bg-zinc-700 border border-zinc-600 rounded-sm text-white focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 transition-all duration-300"
-                        placeholder="email@example.com"
-                      />
-                    </div>
-                    <div className="mb-4">
-                      <label htmlFor="quick-question" className="block text-white font-medium mb-1 text-sm">
-                        Your Question
-                      </label>
-                      <textarea
-                        id="quick-question"
-                        rows={3}
-                        className="w-full px-3 py-2 bg-zinc-700 border border-zinc-600 rounded-sm text-white focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 transition-all duration-300"
-                        placeholder="What would you like to know?"
-                      ></textarea>
-                    </div>
-                    <CyberButton size="sm">Send Question</CyberButton>
-                  </div>
-                )}
-              </div>
             </div>
 
             <div className="bg-zinc-900 p-6 rounded-sm cyber-border">

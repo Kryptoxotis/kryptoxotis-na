@@ -12,33 +12,7 @@ export default function SpectrePage() {
   const [isCheckingIP, setIsCheckingIP] = useState(true)
   const [agentLoaded, setAgentLoaded] = useState(false)
   const [clientIP, setClientIP] = useState<string>("")
-
-  // Simple access control - you can change this code
-  const SPECTRE_ACCESS_CODE = "KRYPTO2025"
-
-  // Get client IP for testing
-  useEffect(() => {
-    const getClientIP = async () => {
-      try {
-        // Try to get IP from a public service
-        const response = await fetch("https://api.ipify.org?format=json")
-        const data = await response.json()
-        setClientIP(data.ip)
-      } catch (error) {
-        console.log("Could not fetch IP from external service")
-        // Fallback: try to get IP from our auth endpoint
-        try {
-          const authResponse = await fetch("/api/spectre/auth")
-          const authData = await authResponse.json()
-          setClientIP(authData.ip || "Unknown")
-        } catch (authError) {
-          setClientIP("Unable to determine")
-        }
-      }
-    }
-
-    getClientIP()
-  }, [])
+  const [isValidating, setIsValidating] = useState(false)
 
   // Check IP whitelist on component mount
   useEffect(() => {
@@ -50,8 +24,8 @@ export default function SpectrePage() {
         if (data.authorized) {
           setIsAuthenticated(true)
         }
+        setClientIP(data.ip || "Unknown")
       } catch (error) {
-        console.log("IP check failed, requiring manual authentication")
       } finally {
         setIsCheckingIP(false)
       }
@@ -60,17 +34,31 @@ export default function SpectrePage() {
     checkIPAccess()
   }, [])
 
-  const handleAccess = (e: React.FormEvent) => {
+  const handleAccess = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (accessCode === SPECTRE_ACCESS_CODE) {
-      setIsAuthenticated(true)
-      setError("")
-    } else {
-      setError("Invalid access code")
+    setIsValidating(true)
+    setError("")
+    try {
+      const response = await fetch("/api/spectre/validate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: accessCode }),
+      })
+      const data = await response.json()
+      if (data.authorized) {
+        setIsAuthenticated(true)
+        setError("")
+      } else {
+        setError(data.message || "Invalid access code")
+        setAccessCode("")
+      }
+    } catch (error) {
+      setError("Failed to validate access code. Please try again.")
       setAccessCode("")
+    } finally {
+      setIsValidating(false)
     }
   }
-
   useEffect(() => {
     // Load the ElevenLabs script only after authentication
     if (isAuthenticated) {

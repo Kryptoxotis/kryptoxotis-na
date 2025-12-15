@@ -4,11 +4,18 @@ import { useState, useEffect } from "react"
 import { CyberButton } from "./ui/cyber-button"
 import { LoadingSpinner } from "./ui/loading-spinner"
 
+interface TestResult {
+  loading: boolean
+  success?: boolean
+  data?: unknown
+  error?: string
+}
+
 export function ClientNotionTest() {
   const [testResults, setTestResults] = useState<{
-    testimonials: { loading: boolean; success?: boolean; data?: any; error?: string }
-    faqs: { loading: boolean; success?: boolean; data?: any; error?: string }
-    projects: { loading: boolean; success?: boolean; data?: any; error?: string }
+    testimonials: TestResult
+    faqs: TestResult
+    projects: TestResult
   }>({
     testimonials: { loading: true },
     faqs: { loading: true },

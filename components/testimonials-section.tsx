@@ -31,7 +31,6 @@ export function TestimonialsSection() {
         }
 
         const data = await response.json()
-        console.log("Testimonials fetched:", data)
         setTestimonials(data)
         setError(null)
       } catch (err) {

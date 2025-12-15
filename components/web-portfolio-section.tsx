@@ -6,9 +6,10 @@ import { SectionTitle } from "@/components/ui/section-title"
 import { CyberButton } from "@/components/ui/cyber-button"
 import { LoadingSpinner } from "@/components/ui/loading-spinner"
 import { ExternalLink } from "lucide-react"
+import type { WebProject } from "@/types/notion"
 
 export function WebPortfolioSection({ title = "Our Web Design Portfolio" }) {
-  const [projects, setProjects] = useState<any[]>([])
+  const [projects, setProjects] = useState<WebProject[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<string | null>(null)
@@ -38,9 +39,9 @@ export function WebPortfolioSection({ title = "Our Web Design Portfolio" }) {
 
         // Filter for featured projects with URLs
         const featuredProjects = data
-          .filter((project: any) => project.url && project.featured)
+          .filter((project: WebProject) => project.url && project.featured)
           // Sort by the order field
-          .sort((a: any, b: any) => {
+          .sort((a: WebProject, b: WebProject) => {
             // If order is not defined, put at the end
             if (a.order === undefined) return 1
             if (b.order === undefined) return -1
@@ -183,7 +184,7 @@ export function WebPortfolioSection({ title = "Our Web Design Portfolio" }) {
                       <div className="flex flex-wrap gap-2">
                         {projects
                           .find((p) => p.id === activeTab)
-                          ?.technologies.map((tech: string, index: number) => (
+                          ?.technologies?.map((tech: string, index: number) => (
                             <span key={index} className="bg-zinc-800 text-white px-3 py-1 rounded-sm text-sm">
                               {tech}
                             </span>

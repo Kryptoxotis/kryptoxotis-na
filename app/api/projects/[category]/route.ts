@@ -1,74 +1,17 @@
 import { NextResponse } from "next/server"
+import type { NotionRichText, NotionFile, NotionPageGeneric, NotionMultiSelectItem } from "@/types/notion"
 
 export const runtime = "nodejs" // Force Node.js runtime
 
-// Mock data for projects
-const mockProjects = {
-  database: [
-    {
-      id: "1",
-      title: "Enterprise Database Overhaul",
-      description: "Complete restructuring and automation of a legacy database system for a Fortune 500 company.",
-      image: "/placeholder.svg?height=400&width=600",
-      featured: true,
-      order: 1,
-    },
-    {
-      id: "2",
-      title: "E-commerce Inventory System",
-      description: "Custom inventory management system with real-time tracking and automated reordering.",
-      image: "/placeholder.svg?height=400&width=600",
-      featured: false,
-      order: 2,
-    },
-  ],
-  web: [
-    {
-      id: "3",
-      title: "Luxury Brand Website",
-      description:
-        "Sleek, responsive website design for a high-end fashion brand with integrated e-commerce functionality.",
-      image: "/placeholder.svg?height=400&width=600",
-      featured: true,
-      order: 1,
-    },
-    {
-      id: "4",
-      title: "Tech Startup Landing Page",
-      description: "Modern, conversion-focused landing page with animated elements and lead generation forms.",
-      image: "/placeholder.svg?height=400&width=600",
-      featured: false,
-      order: 2,
-    },
-  ],
-  "3d": [
-    {
-      id: "5",
-      title: "Architectural Model Prototypes",
-      description: "Detailed 3D printed architectural models for a major urban development project.",
-      image: "/placeholder.svg?height=400&width=600",
-      featured: true,
-      order: 1,
-    },
-    {
-      id: "6",
-      title: "Custom Product Components",
-      description: "Precision 3D printed components for a medical device manufacturer.",
-      image: "/placeholder.svg?height=400&width=600",
-      featured: false,
-      order: 2,
-    },
-  ],
-}
 
 // Helper function to safely extract rich text from Notion
-function extractRichText(richText: any[] | undefined): string {
+function extractRichText(richText: NotionRichText[] | undefined): string {
   if (!richText || !Array.isArray(richText) || richText.length === 0) return ""
   return richText.map((text) => text?.plain_text || "").join("")
 }
 
 // Update the extractFileUrl function to handle STL files
-function extractFileUrl(files: any[] | undefined, fileType = "image"): string {
+function extractFileUrl(files: NotionFile[] | undefined, fileType = "image"): string {
   if (!files || !Array.isArray(files) || files.length === 0) {
     return fileType === "image" ? "/placeholder.svg?height=400&width=600" : ""
   }
@@ -87,11 +30,9 @@ function extractFileUrl(files: any[] | undefined, fileType = "image"): string {
 
 export async function GET(request: Request, { params }: { params: { category: string } }) {
   const category = params.category
-  console.log(`API: Starting getProjects function for category: ${category} in environment:`, process.env.NODE_ENV)
 
   // If no category is specified, return an empty array
   if (!category) {
-    return NextResponse.json([])
   }
 
   // Determine which database ID to use
@@ -108,17 +49,13 @@ export async function GET(request: Request, { params }: { params: { category: st
       break
     default:
       // If category doesn't match any known category, return an empty array
-      return NextResponse.json([])
   }
 
   // Check if we're in a development environment or if API keys are missing
   if (!process.env.NOTION_API_KEY || !databaseId) {
-    console.log(`API: Using mock ${category} projects data due to missing environment variables`)
-    return NextResponse.json(mockProjects[category as keyof typeof mockProjects] || [])
   }
 
   try {
-    console.log(`API: Querying Notion ${category} projects database`)
 
     // Use fetch directly to query the Notion API
     const response = await fetch(`https://api.notion.com/v1/databases/${databaseId}/query`, {
@@ -138,10 +75,27 @@ export async function GET(request: Request, { params }: { params: { category: st
     }
 
     const data = await response.json()
-    console.log(`API: Received ${data.results.length} ${category} projects from Notion`)
+
+    // Define project type with optional category-specific fields
+    interface Project {
+      id: string
+      title: string
+      description: string
+      client: string
+      image: string
+      featured: boolean
+      order: number | null | undefined
+      technologies?: string[]
+      url?: string
+      materials?: string[]
+      application?: string
+      stlFile?: string
+      printTime?: number
+      status?: string
+    }
 
     // In the GET function, update the project mapping to include STL files
-    const projects = data.results.map((page: any) => {
+    const projects = data.results.map((page: NotionPageGeneric) => {
       const properties = page.properties || {}
 
       // Extract the project data
@@ -154,7 +108,7 @@ export async function GET(request: Request, { params }: { params: { category: st
       const featured = properties.Featured?.checkbox || false
       const order = properties.Order?.number
 
-      const project = {
+      const project: Project = {
         id: page.id,
         title,
         description,
@@ -167,7 +121,7 @@ export async function GET(request: Request, { params }: { params: { category: st
       // Add category-specific properties
       if (category === "database" || category === "web") {
         if (properties.Technologies?.multi_select) {
-          project.technologies = properties.Technologies.multi_select.map((tech: any) => tech.name || "")
+          project.technologies = properties.Technologies.multi_select.map((tech: NotionMultiSelectItem) => tech.name || "")
         }
 
         if (category === "web" && properties["Website URL"]?.url) {
@@ -182,7 +136,7 @@ export async function GET(request: Request, { params }: { params: { category: st
         }
 
         if (properties.Materials?.multi_select) {
-          project.materials = properties.Materials.multi_select.map((material: any) => material.name || "")
+          project.materials = properties.Materials.multi_select.map((material: NotionMultiSelectItem) => material.name || "")
         }
 
         if (properties.Application?.select) {
@@ -210,18 +164,6 @@ export async function GET(request: Request, { params }: { params: { category: st
     return NextResponse.json(projects)
   } catch (error) {
     console.error(`API: Error fetching ${category} projects:`, error)
-
-    // In production, return mock data with error info
-    if (process.env.NODE_ENV === "production") {
-      return NextResponse.json({
-        items: mockProjects[category as keyof typeof mockProjects] || [],
-        error: {
-          message: error instanceof Error ? error.message : "Unknown error",
-          type: "fetch_error",
-        },
-      })
-    }
-
-    return NextResponse.json(mockProjects[category as keyof typeof mockProjects] || [])
+    return NextResponse.json([], { status: 500 })
   }
 }

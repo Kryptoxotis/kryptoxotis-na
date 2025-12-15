@@ -1,12 +1,80 @@
 import { NextResponse } from "next/server"
 import { Client } from "@notionhq/client"
+import sanitizeHtml from "sanitize-html"
+import { API_CONFIG, SANITIZE_CONFIG, DEFAULTS } from "@/lib/constants"
 
 const notion = new Client({
   auth: process.env.NOTION_API_KEY,
 })
 
+// TypeScript interfaces for Notion API responses
+interface NotionRichTextAnnotations {
+  bold: boolean
+  italic: boolean
+  strikethrough: boolean
+  underline: boolean
+  code: boolean
+}
+
+interface NotionRichText {
+  plain_text: string
+  href?: string | null
+  annotations?: NotionRichTextAnnotations
+}
+
+interface NotionBlock {
+  type: string
+  id: string
+  paragraph?: { rich_text: NotionRichText[] }
+  heading_1?: { rich_text: NotionRichText[] }
+  heading_2?: { rich_text: NotionRichText[] }
+  heading_3?: { rich_text: NotionRichText[] }
+  bulleted_list_item?: { rich_text: NotionRichText[] }
+  numbered_list_item?: { rich_text: NotionRichText[] }
+  quote?: { rich_text: NotionRichText[] }
+  code?: { rich_text: NotionRichText[]; language?: string }
+  image?: {
+    file?: { url: string }
+    external?: { url: string }
+    caption?: NotionRichText[]
+  }
+}
+
+interface NotionTag {
+  name: string
+}
+
+interface NotionPageProperties {
+  Title?: { title: Array<{ plain_text: string }> }
+  Excerpt?: { rich_text: Array<{ plain_text: string }> }
+  Category?: { select: { name: string } | null }
+  Tags?: { multi_select: NotionTag[] }
+  "Publish Date"?: { date: { start: string } | null }
+  "Estimated Read Time"?: { number: number | null }
+  "Word Count"?: { number: number | null }
+  "SEO Score"?: { number: number | null }
+  Status?: { status?: { name: string }; select?: { name: string } }
+  Featured?: { checkbox: boolean }
+  Author?: { rich_text: Array<{ plain_text: string }> }
+  URL?: { url: string | null }
+}
+
+interface NotionPage {
+  id: string
+  url: string
+  properties: NotionPageProperties
+}
+
+interface NotionBlocksResponse {
+  results: NotionBlock[]
+}
+
+interface NotionDatabaseResponse {
+  results: NotionPage[]
+}
+
 // Helper function to convert Notion rich text to HTML
-function richTextToHtml(richText: any[]): string {
+function richTextToHtml(richText: NotionRichText[]): string {
   if (!richText || !Array.isArray(richText)) return ""
 
   return richText
@@ -29,7 +97,7 @@ function richTextToHtml(richText: any[]): string {
 }
 
 // Helper function to convert Notion blocks to HTML with timeout
-async function blocksToHtml(blocks: any[]): Promise<string> {
+async function blocksToHtml(blocks: NotionBlock[]): Promise<string> {
   try {
     const htmlBlocks = await Promise.all(
       blocks.map(async (block) => {
@@ -113,35 +181,30 @@ async function blocksToHtml(blocks: any[]): Promise<string> {
 }
 
 // Helper function to fetch content with timeout and retry
-async function fetchPageContent(pageId: string, retries = 2): Promise<string> {
+async function fetchPageContent(pageId: string, retries = API_CONFIG.MAX_RETRIES): Promise<string> {
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
-      console.log(`Fetching content for page ${pageId}, attempt ${attempt + 1}`)
-
       // Add timeout to the request
-      const timeoutPromise = new Promise(
-        (_, reject) => setTimeout(() => reject(new Error("Request timeout")), 10000), // 10 second timeout
+      const timeoutPromise = new Promise<never>(
+        (_, reject) => setTimeout(() => reject(new Error("Request timeout")), API_CONFIG.PAGE_CONTENT_TIMEOUT)
       )
 
       const blocksPromise = notion.blocks.children.list({
         block_id: pageId,
       })
 
-      const blocksResponse = (await Promise.race([blocksPromise, timeoutPromise])) as any
+      const blocksResponse = (await Promise.race([blocksPromise, timeoutPromise])) as NotionBlocksResponse
       const content = await blocksToHtml(blocksResponse.results)
 
-      console.log(`Successfully fetched content for page ${pageId}`)
-      return content
+      // Sanitize HTML to prevent XSS attacks
+      return sanitizeHtml(content, SANITIZE_CONFIG)
     } catch (error) {
-      console.error(`Attempt ${attempt + 1} failed for page ${pageId}:`, error)
-
       if (attempt === retries) {
-        console.error(`All attempts failed for page ${pageId}, using fallback content`)
         return "<p>Content is temporarily unavailable. Please check back later.</p>"
       }
 
       // Wait before retrying
-      await new Promise((resolve) => setTimeout(resolve, 1000 * (attempt + 1)))
+      await new Promise((resolve) => setTimeout(resolve, API_CONFIG.RETRY_DELAY * (attempt + 1)))
     }
   }
 
@@ -150,23 +213,17 @@ async function fetchPageContent(pageId: string, retries = 2): Promise<string> {
 
 export async function GET() {
   try {
-    console.log("Server: Starting getBlogPosts API function")
-
     if (!process.env.NOTION_API_KEY) {
-      console.error("Server: NOTION_API_KEY is not set")
       return NextResponse.json({ error: "Notion API key not configured" }, { status: 500 })
     }
 
     if (!process.env.NOTION_BLOG_DATABASE_ID) {
-      console.error("Server: NOTION_BLOG_DATABASE_ID is not set")
       return NextResponse.json({ error: "Blog database ID not configured" }, { status: 500 })
     }
 
-    console.log("Server: Fetching blog posts from Notion database")
-
     // Add timeout to database query
-    const timeoutPromise = new Promise(
-      (_, reject) => setTimeout(() => reject(new Error("Database query timeout")), 15000), // 15 second timeout
+    const timeoutPromise = new Promise<never>(
+      (_, reject) => setTimeout(() => reject(new Error("Database query timeout")), API_CONFIG.NOTION_TIMEOUT)
     )
 
     const queryPromise = notion.databases.query({
@@ -179,27 +236,22 @@ export async function GET() {
       ],
     })
 
-    const response = (await Promise.race([queryPromise, timeoutPromise])) as any
-
-    console.log(`Server: Retrieved ${response.results.length} total blog posts from Notion`)
+    const response = (await Promise.race([queryPromise, timeoutPromise])) as NotionDatabaseResponse
 
     // Process posts in smaller batches to avoid overwhelming the API
-    const batchSize = 3
+    const batchSize = API_CONFIG.BLOG_BATCH_SIZE
     const allBlogPosts = []
 
     for (let i = 0; i < response.results.length; i += batchSize) {
       const batch = response.results.slice(i, i + batchSize)
-      console.log(
-        `Processing batch ${Math.floor(i / batchSize) + 1} of ${Math.ceil(response.results.length / batchSize)}`,
-      )
 
       const batchResults = await Promise.all(
-        batch.map(async (page: any) => {
+        batch.map(async (page: NotionPage) => {
           try {
             const properties = page.properties
 
             // Extract basic properties first
-            const tags = properties.Tags?.multi_select?.map((tag: any) => tag.name) || []
+            const tags = properties.Tags?.multi_select?.map((tag: NotionTag) => tag.name) || []
             const publishDate = properties["Publish Date"]?.date?.start || new Date().toISOString().split("T")[0]
 
             // Get status - handle both status and select property types
@@ -224,17 +276,16 @@ export async function GET() {
               category: properties.Category?.select?.name || "General",
               tags: tags,
               publishDate: publishDate,
-              estimatedReadTime: properties["Estimated Read Time"]?.number || 5,
+              estimatedReadTime: properties["Estimated Read Time"]?.number || DEFAULTS.READ_TIME,
               wordCount: properties["Word Count"]?.number || 0,
               seoScore: properties["SEO Score"]?.number || 0,
               status: status,
               featured: properties.Featured?.checkbox || false,
-              author: properties.Author?.rich_text?.[0]?.plain_text || "Kryptoxotis Team",
+              author: properties.Author?.rich_text?.[0]?.plain_text || DEFAULTS.AUTHOR,
               url: properties.URL?.url || null,
               notionUrl: page.url,
             }
           } catch (error) {
-            console.error(`Server: Error processing blog post ${page.id}:`, error)
             return null
           }
         }),
@@ -244,19 +295,15 @@ export async function GET() {
 
       // Small delay between batches to be nice to the API
       if (i + batchSize < response.results.length) {
-        await new Promise((resolve) => setTimeout(resolve, 500))
+        await new Promise((resolve) => setTimeout(resolve, API_CONFIG.BATCH_DELAY))
       }
     }
 
     // Filter to only show published posts
     const publishedPosts = allBlogPosts.filter((post) => post.status === "Published")
 
-    console.log(`Server: Successfully processed ${publishedPosts.length} published blog posts`)
     return NextResponse.json(publishedPosts)
   } catch (error) {
-    console.error("Server: Error in getBlogPosts API:", error)
-
-    // Return a more user-friendly error response
     return NextResponse.json(
       {
         error: "Unable to fetch blog posts at this time. Please try again later.",

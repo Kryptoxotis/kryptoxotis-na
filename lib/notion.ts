@@ -70,12 +70,10 @@ export interface ContactSubmission {
 
 // Function to fetch Testimonials
 export async function getTestimonials(): Promise<Testimonial[]> {
-  console.log("Client: Starting getTestimonials function")
 
   try {
     // Add a timestamp to prevent caching
-    const timestamp = new Date().getTime()
-    const response = await fetch(`/api/testimonials?t=${timestamp}`, {
+    const response = await fetch(`/api/testimonials`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -93,7 +91,6 @@ export async function getTestimonials(): Promise<Testimonial[]> {
     }
 
     const testimonials = await response.json()
-    console.log(`Client: Received ${testimonials.length} testimonials`)
     return testimonials
   } catch (error) {
     console.error("Client: Error fetching testimonials:", error)
@@ -103,12 +100,10 @@ export async function getTestimonials(): Promise<Testimonial[]> {
 
 // Function to fetch FAQs
 export async function getFAQs(): Promise<FAQ[]> {
-  console.log("Client: Starting getFAQs function")
 
   try {
     // Add a timestamp to prevent caching
-    const timestamp = new Date().getTime()
-    const response = await fetch(`/api/faqs?t=${timestamp}`, {
+    const response = await fetch(`/api/faqs`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -126,7 +121,6 @@ export async function getFAQs(): Promise<FAQ[]> {
     }
 
     const faqs = await response.json()
-    console.log(`Client: Received ${faqs.length} FAQs`)
     return faqs
   } catch (error) {
     console.error("Client: Error fetching FAQs:", error)
@@ -136,7 +130,6 @@ export async function getFAQs(): Promise<FAQ[]> {
 
 // Function to fetch Projects based on category
 export async function getProjects(category?: string): Promise<Project[]> {
-  console.log(`Client: Starting getProjects function for category: ${category}`)
 
   // If no category is specified, return an empty array
   if (!category) {
@@ -145,8 +138,7 @@ export async function getProjects(category?: string): Promise<Project[]> {
 
   try {
     // Add a timestamp to prevent caching
-    const timestamp = new Date().getTime()
-    const response = await fetch(`/api/projects/${category}?t=${timestamp}`, {
+    const response = await fetch(`/api/projects/${category}`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -164,7 +156,6 @@ export async function getProjects(category?: string): Promise<Project[]> {
     }
 
     const projects = await response.json()
-    console.log(`Client: Received ${projects.length} ${category} projects`)
     return projects
   } catch (error) {
     console.error(`Client: Error fetching ${category} projects:`, error)
@@ -174,12 +165,10 @@ export async function getProjects(category?: string): Promise<Project[]> {
 
 // Function to fetch Blog Posts
 export async function getBlogPosts(): Promise<BlogPost[]> {
-  console.log("Client: Starting getBlogPosts function")
 
   try {
     // Add a timestamp to prevent caching
-    const timestamp = new Date().getTime()
-    const response = await fetch(`/api/blog?t=${timestamp}`, {
+    const response = await fetch(`/api/blog`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -197,7 +186,6 @@ export async function getBlogPosts(): Promise<BlogPost[]> {
     }
 
     const blogPosts = await response.json()
-    console.log(`Client: Received ${blogPosts.length} blog posts`)
     return blogPosts
   } catch (error) {
     console.error("Client: Error fetching blog posts:", error)
@@ -207,12 +195,10 @@ export async function getBlogPosts(): Promise<BlogPost[]> {
 
 // Function to fetch 3D Printing Materials
 export async function getMaterials(): Promise<Material[]> {
-  console.log("Client: Starting getMaterials function")
 
   try {
     // Add a timestamp to prevent caching
-    const timestamp = new Date().getTime()
-    const response = await fetch(`/api/materials?t=${timestamp}`, {
+    const response = await fetch(`/api/materials`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -230,7 +216,6 @@ export async function getMaterials(): Promise<Material[]> {
     }
 
     const materials = await response.json()
-    console.log(`Client: Received ${materials.length} materials`)
     return materials
   } catch (error) {
     console.error("Client: Error fetching materials:", error)
@@ -240,7 +225,6 @@ export async function getMaterials(): Promise<Material[]> {
 
 // Function to submit contact form data
 export async function submitContactForm(data: ContactSubmission): Promise<{ success: boolean; message: string }> {
-  console.log("Client: Starting submitContactForm function")
 
   try {
     const response = await fetch("/api/contact", {
@@ -261,7 +245,6 @@ export async function submitContactForm(data: ContactSubmission): Promise<{ succ
     }
 
     const result = await response.json()
-    console.log("Client: Contact form submitted successfully")
     return result
   } catch (error) {
     console.error("Client: Error submitting contact form:", error)

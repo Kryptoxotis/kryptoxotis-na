@@ -31,7 +31,6 @@ export function FAQsSection() {
         }
 
         const data = await response.json()
-        console.log("FAQs fetched:", data)
         setFaqs(data)
         setError(null)
       } catch (err) {

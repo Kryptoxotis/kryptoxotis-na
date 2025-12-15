@@ -12,12 +12,7 @@ interface BlogPostPageProps {
 
 async function getBlogPostByDate(date: string) {
   try {
-    console.log("Searching for blog post with date:", date)
     const posts = await getBlogPosts()
-    console.log(
-      "Available posts:",
-      posts.map((p) => ({ title: p.title, publishDate: p.publishDate })),
-    )
 
     // Handle different date formats
     let searchDate: string
@@ -41,16 +36,12 @@ async function getBlogPostByDate(date: string) {
       searchDate = date
     }
 
-    console.log("Formatted search date:", searchDate)
-
     // Find post by matching the date
     const foundPost = posts.find((post) => {
       const postDate = new Date(post.publishDate).toISOString().split("T")[0]
-      console.log(`Comparing post date ${postDate} with search date ${searchDate}`)
       return postDate === searchDate
     })
 
-    console.log("Found post:", foundPost ? foundPost.title : "None")
     return foundPost
   } catch (error) {
     console.error("Error fetching blog post:", error)
@@ -62,7 +53,6 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
   const post = await getBlogPostByDate(params.date)
 
   if (!post) {
-    console.log("No post found, showing 404")
     notFound()
   }
 
@@ -141,7 +131,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
               <div className="lg:col-span-3">
                 <article className="prose prose-invert prose-emerald max-w-none prose-lg">
                   <div
-                    className="text-white leading-relaxed 
+                    className="text-white leading-relaxed
                     [&>h1]:text-3xl [&>h1]:font-bold [&>h1]:mb-6 [&>h1]:text-emerald-400 [&>h1]:mt-8
                     [&>h2]:text-2xl [&>h2]:font-bold [&>h2]:mb-4 [&>h2]:text-emerald-400 [&>h2]:mt-6
                     [&>h3]:text-xl [&>h3]:font-bold [&>h3]:mb-3 [&>h3]:text-emerald-400 [&>h3]:mt-4

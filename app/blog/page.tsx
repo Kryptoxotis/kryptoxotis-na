@@ -47,7 +47,6 @@ export default function BlogPage() {
         }
 
         const data = await response.json()
-        console.log("Blog posts fetched:", data)
         setPosts(data)
         setError(null)
       } catch (err) {

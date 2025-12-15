@@ -37,7 +37,7 @@ export function NotionApiTest() {
         loading: false,
         success: false,
         message: "Error testing Notion API connection",
-        error: error.message,
+        error: error instanceof Error ? error.message : "Unknown error",
       })
     }
   }

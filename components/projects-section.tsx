@@ -38,7 +38,6 @@ export function ProjectsSection({ category, title = "Portfolio" }: ProjectsSecti
         }
 
         const data = await response.json()
-        console.log(`${category} projects fetched:`, data)
         setProjects(data)
         setError(null)
       } catch (err) {

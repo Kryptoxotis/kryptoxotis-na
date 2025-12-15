@@ -1,24 +1,22 @@
 import { type NextRequest, NextResponse } from "next/server"
+import { checkRateLimit, getClientIP, getRateLimitHeaders } from "@/lib/rate-limit"
 
 export async function GET(request: NextRequest) {
   try {
-    // Get the client IP address with better detection
-    const forwarded = request.headers.get("x-forwarded-for")
-    const realIP = request.headers.get("x-real-ip")
-    const cfConnectingIP = request.headers.get("cf-connecting-ip")
-    const xClientIP = request.headers.get("x-client-ip")
+    // Get the client IP using shared utility
+    const clientIP = getClientIP(request.headers)
 
-    // Try multiple headers to get the real IP
-    let clientIP = "unknown"
+    // Rate limiting check for auth endpoint
+    const rateLimitResult = checkRateLimit(clientIP, "auth")
 
-    if (cfConnectingIP) {
-      clientIP = cfConnectingIP.trim()
-    } else if (forwarded) {
-      clientIP = forwarded.split(",")[0].trim()
-    } else if (realIP) {
-      clientIP = realIP.trim()
-    } else if (xClientIP) {
-      clientIP = xClientIP.trim()
+    if (!rateLimitResult.success) {
+      return NextResponse.json({
+        authorized: false,
+        message: "Too many requests. Please try again later.",
+      }, {
+        status: 429,
+        headers: getRateLimitHeaders(rateLimitResult)
+      })
     }
 
     // Get allowed IPs from environment variable and clean them
@@ -27,7 +25,7 @@ export async function GET(request: NextRequest) {
       .split(",")
       .map((ip) => ip.trim())
       .map((ip) => ip.replace(/^["']|["']$/g, "")) // Remove surrounding quotes
-      .filter((ip) => ip.length > 0)
+      .filter((ip) => ip.length > 0 && /^(\d{1,3}\.){3}\d{1,3}$/.test(ip))
 
     // Check if the client IP is in the allowed list
     const isAuthorized = allowedIPs.includes(clientIP)

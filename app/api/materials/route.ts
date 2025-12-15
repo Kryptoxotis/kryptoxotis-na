@@ -1,15 +1,17 @@
 import { NextResponse } from "next/server"
+import type { NotionRichText, NotionMultiSelectItem, NotionPageGeneric } from "@/types/notion"
+import { NO_CACHE_HEADERS } from "@/lib/constants"
 
 export const runtime = "nodejs" // Force Node.js runtime
 
 // Helper function to safely extract rich text from Notion
-function extractRichText(richText: any[] | undefined): string {
+function extractRichText(richText: NotionRichText[] | undefined): string {
   if (!richText || !Array.isArray(richText) || richText.length === 0) return ""
   return richText.map((text) => text?.plain_text || "").join("")
 }
 
 // Helper function to extract multi-select values
-function extractMultiSelect(multiSelect: any[] | undefined): string[] {
+function extractMultiSelect(multiSelect: NotionMultiSelectItem[] | undefined): string[] {
   if (!multiSelect || !Array.isArray(multiSelect)) return []
   return multiSelect.map((item) => item?.name || "")
 }
@@ -51,7 +53,7 @@ export async function GET(request: Request) {
     const data = await response.json()
 
     // Process the results
-    const materials = data.results.map((page: any) => {
+    const materials = data.results.map((page: NotionPageGeneric) => {
       const properties = page.properties || {}
 
       // Extract the material data
@@ -80,9 +82,7 @@ export async function GET(request: Request) {
     return new NextResponse(JSON.stringify(materials), {
       headers: {
         "Content-Type": "application/json",
-        "Cache-Control": "no-cache, no-store, must-revalidate",
-        Pragma: "no-cache",
-        Expires: "0",
+        ...NO_CACHE_HEADERS,
       },
     })
   } catch (error) {
@@ -91,9 +91,7 @@ export async function GET(request: Request) {
       status: 500,
       headers: {
         "Content-Type": "application/json",
-        "Cache-Control": "no-cache, no-store, must-revalidate",
-        Pragma: "no-cache",
-        Expires: "0",
+        ...NO_CACHE_HEADERS,
       },
     })
   }

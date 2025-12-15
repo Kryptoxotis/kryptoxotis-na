@@ -132,7 +132,7 @@ export function STLModelViewer({
           powerPreference: "high-performance",
           alpha: false,
           stencil: false,
-          clearColor: backgroundColor,
+          
         }}
         style={{ height: "100%", width: "100%", backgroundColor }}
       >
